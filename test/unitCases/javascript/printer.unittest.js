@@ -13389,6 +13389,68 @@ describe("JavaScript minifier printing a SyntaxTree", () => {
 		}
 	});
 
+	it("should compress in the one pass where nothing outside a node decides it", async () => {
+		const { minify, modules } = await load();
+		/** @type {[string, import("../../../lib/javascript/syntax-printer").MinifyOptions, string][]} */
+		const cases = [
+			[
+				"if (a) { b() } while (a) { a-- } for (;;) { break } l: { c() } with (o) { d() } do { e() } while (a); for (k in o) { f(k) } for (k of o) { f(k) }",
+				{},
+				"if(a)b();while(a)a--;for(;;)break;o:c();with(o)d();do e();while(a);for(k in o)f(k);for(k of o)f(k);"
+			],
+			// An `else` after a block keeps it where the block ends in an `if` of its own.
+			[
+				"if (a) { if (b) c(); } else d(); if (a) { for (;;) if (b) c(); } else d(); if (a) { if (b) c(); else e(); } else d(); if (a) { l: if (b) c(); } else d();",
+				{},
+				"if(a){if(b)c()}else d();if(a){for(;;)if(b)c()}else d();if(a)if(b)c();else e();else d();if(a){e:if(b)c()}else d();"
+			],
+			[
+				"if (a) { let x = 1; f(x) } if (a) { const y = 1; f(y) } if (a) { var z = 1 } if (a) { class C {} } if (a) { function g() {} } if (a) {} if (a) { b(); c() }",
+				{},
+				"if(a){let i=1;f(i)}if(a){const n=1;f(n)}if(a)var z=1;if(a){class s{}}if(a){function g(){}}if(a){}if(a){b();c()}"
+			],
+			[
+				"if (a) /* before */ { b() } if (a) { b() /* after */ }",
+				{ format: { comments: /before|after/ } },
+				"if(a)/* before */{b()}if(a){b()/* after */}"
+			],
+			[
+				"var a = 1; var b = 2, c; var [d] = e; let x = 1; let y = 2; const z = 3; var w; /* note */ var q; f(a, b, c, d, x, y, z, w, q)",
+				{ format: { comments: /note/ } },
+				"var a=1,b=2,c,[d]=e;let x=1,y=2;const z=3;var w;/* note */var q;f(a,b,c,d,x,y,z,w,q);"
+			],
+			[
+				"f(true, false); x = true.toString(); y = true ** 2; z = 2 ** true; w = { a: false }; t = typeof true; new true; true`x`; v = a(true)(false)",
+				{},
+				"f(!0,!1);x=true.toString();y=true**2;z=2**!0;w={a:!1};t=typeof!0;new true;true`x`;v=a(!0)(!1);"
+			],
+			// A `using` declaration disposes of each of its names alone.
+			[
+				"{ using a = b(); using c = d(); f(a, c) }",
+				{},
+				"{using a=b();using c=d();f(a,c)}"
+			]
+		];
+		modules.onePass.enabled = true;
+		try {
+			for (const [source, options, expected] of cases) {
+				const { code } = await minify(source, {
+					compress: { toplevel: false },
+					mangle: { toplevel: false },
+					...options
+				});
+				expect(code).toBe(expected);
+			}
+			// Every comment kept is still the compressor's to keep.
+			const { code } = await minify("if (a) { b() } /* c */", {
+				format: { comments: "all" }
+			});
+			expect(code).toBe("a&&b()/* c */;");
+		} finally {
+			modules.onePass.enabled = false;
+		}
+	});
+
 	it("should read a single named source under its name", async () => {
 		const options = { compress: false, mangle: false };
 		const printed = await minifyCounted({ "a.js": "a( 1 )" }, options, true);
