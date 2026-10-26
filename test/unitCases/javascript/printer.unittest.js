@@ -13370,6 +13370,25 @@ describe("JavaScript minifier printing a SyntaxTree", () => {
 		expect(printed.code).toBe(reference.code);
 	});
 
+	it("should mangle and print in one walk where it compresses in one pass", async () => {
+		const { modules } = await load();
+		modules.onePass.enabled = true;
+		try {
+			const printed = await minifyCounted(
+				"function foo(longName, other) { var local = longName + other; return local * 2; } foo(1, 2); class A { #field = 1; read() { return this.#field } static #hidden() {} } print(new A().read());",
+				{ toplevel: true },
+				true
+			);
+			expect(printed.code).toBe(
+				"function e(e,o){var r=e+o;return r*2}e(1,2);class o{#e=1;read(){return this.#e}static#o(){}}print((new o).read());"
+			);
+			expect(printed.printedFromTree).toBe(0);
+			expect(printed.printedNodes).toBe(1);
+		} finally {
+			modules.onePass.enabled = false;
+		}
+	});
+
 	it("should read a single named source under its name", async () => {
 		const options = { compress: false, mangle: false };
 		const printed = await minifyCounted({ "a.js": "a( 1 )" }, options, true);
