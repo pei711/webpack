@@ -13405,9 +13405,9 @@ describe("JavaScript minifier printing a SyntaxTree", () => {
 				"if(a){if(b)c()}else d();if(a){for(;;)if(b)c()}else d();if(a)if(b)c();else e();else d();if(a){e:if(b)c()}else d();"
 			],
 			[
-				"if (a) { let x = 1; f(x) } if (a) { const y = 1; f(y) } if (a) { var z = 1 } if (a) { class C {} } if (a) { function g() {} } if (a) {} if (a) { b(); c() }",
+				"if (a) { let x = h(); f(x) } if (a) { const y = h(); f(y) } if (a) { var z = 1 } if (a) { class C {} } if (a) { function g() {} } if (a) {} if (a) { b(); c() }",
 				{},
-				"if(a){let i=1;f(i)}if(a){let n=1;f(n)}if(a)var z=1;if(a){class s{}}if(a){function g(){}}if(a){}if(a){b();c()}"
+				"if(a){let i=h();f(i)}if(a){let n=h();f(n)}if(a)var z=1;if(a){class s{}}if(a){function g(){}}if(a){}if(a){b();c()}"
 			],
 			[
 				"if (a) /* before */ { b() } if (a) { b() /* after */ }",
@@ -13426,9 +13426,15 @@ describe("JavaScript minifier printing a SyntaxTree", () => {
 			],
 			// `undefined` is `void 0` where it reads the global, not where it is bound or written.
 			[
-				"function f(a){ return a === undefined ? undefined.x : typeof undefined } function g(undefined) { return undefined } y = { undefined: 1 }; z = o.undefined; w = [undefined]; undefined = 1; for (undefined in o); undefined++",
+				"function f(a){ return a === undefined ? undefined.x : typeof undefined } function g(undefined) { return undefined } y = { undefined: 1 }; z = o.undefined; w = [undefined]",
 				{},
-				"function f(n){return n===void 0?undefined.x:typeof void 0}function g(n){return n}y={undefined:1};z=o.undefined;w=[void 0];undefined=1;for(undefined in o);undefined++;"
+				"function f(n){return n===void 0?undefined.x:typeof void 0}function g(n){return n}y={undefined:1};z=o.undefined;w=[void 0];"
+			],
+			// Where anything writes it, it stays a name everywhere.
+			[
+				"x = undefined; undefined = 1; for (undefined in o); undefined++",
+				{},
+				"x=undefined;undefined=1;for(undefined in o);undefined++;"
 			],
 			// Strings compare loosely, a name in brackets prints after a `.`, and
 			// a `return` of `undefined` from nothing happening is bare.
@@ -13442,18 +13448,50 @@ describe("JavaScript minifier printing a SyntaxTree", () => {
 			[
 				'const a = g(), b = 1; const { x, y: [z = 1, ...r] } = a; const c = 1; c = 2; const d = 1; d++; const e = 1; [e] = []; const k = 1; ({ k } = {}); const m = 1; for (m of a); export const ex = 1; for (const i of a) g(i, x, z, r, b, c, d, e, k, m); while (true) g(); while (/*! t */ true) g(); while (a) g()',
 				{ module: true },
-				'let o=g(),t=1,{x:c,y:[e=1,...n]}=o;const s=1;s=2;const r=1;r++;const a=1;[a]=[];const i=1;({k:i}={});const f=1;for(f of o);export const ex=1;for(let x of o)g(x,c,e,n,t,s,r,a,i,f);for(;;)g();while(/*! t */!0)g();while(o)g();'
+				'let o=g(),{x:c,y:[e=1,...n]}=o;const s=1;s=2;const r=1;r++;const a=1;[a]=[];const i=1;({k:i}={});const f=1;for(f of o);export const ex=1;for(let x of o)g(x,c,e,n,1,s,r,a,i,f);for(;;)g();while(/*! t */!0)g();while(o)g();'
 			],
 			[
-				"const a = 1; function f() { const b = 2; return b } f(a)",
+				"const a = 1; function f() { const b = g(); return b } f(a)",
 				{},
-				"const a=1;function f(){let n=2;return n}f(a);"
+				"const a=1;function f(){let n=g();return n}f(a);"
 			],
 			// Unmangled, no name is known: every one stays.
 			[
 				"function f(){ const b = 2; var u = 1; return void 0 } f(undefined)",
 				{ mangle: false },
 				"function f(){const b=2;var u=1;return}f(undefined);"
+			],
+			// What only dropped code reads goes too; a constant prints as its value
+			// where that is shorter and the read prints as a name would; a comment
+			// that does not print holds nothing back; a built-in needs no `new`.
+			[
+				'/** doc */ var A = "[object Array]"; /** doc */ var B = 200, C = 1, D = "d"; function f(o){ var a = 1; function g(){ return a } var b = g; const K = 2; if (o) { var u = 1; h(K, K) } return [o.t == A, A, B, B.x, C, {C}, D, new Error("e"), new Map()] } function k(){ g(V); var V = 2; } f(k)',
+				{ compress: { toplevel: true } },
+				'var A="[object Array]",B=200,C=1;function f(r){if(r)h(2,2);return[r.t==A,A,B,B.x,C,{C:C},"d",Error("e"),new Map]}function k(){g(r);var r=2}f(k);'
+			],
+			// A read where the value would print otherwise keeps the name, and so
+			// does a value no literal of a name's length prints the same.
+			[
+				'function f(){ var A = "a", B = "b", D = "d", E = "e", R = /r/, N = -1, G = 1n; (A); B; delete D; g((E)); return [R, N, G, A, B, D, E] } f()',
+				{},
+				'function f(){var e="a",n="b",r="d",f="e",t=/r/,A=-1,B=1n;e;n;delete r;g(f);return[t,A,B,e,n,r,f]}f();'
+			],
+			// Each pass prints the last one's output again.
+			[
+				"function f(){ var a = undefined; return 1 } f()",
+				{ compress: { passes: 1 } },
+				"function f(){var n=void 0;return 1}f();"
+			],
+			[
+				"function f(){ var a = undefined; return 1 } f()",
+				{ compress: { passes: 2 } },
+				"function f(){return 1}f();"
+			],
+			// A preamble is not printed twice.
+			[
+				"function f(){ var a = undefined; return 1 } f()",
+				{ compress: { passes: 2 }, format: { preamble: "/* p */" } },
+				"/* p */\nfunction f(){var n=void 0;return 1}f();"
 			],
 			// A `with` may bind `undefined`, so every one stays a name.
 			[
