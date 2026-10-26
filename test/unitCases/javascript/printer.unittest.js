@@ -13430,6 +13430,22 @@ describe("JavaScript minifier printing a SyntaxTree", () => {
 				{},
 				"function f(n){return n===void 0?undefined.x:typeof void 0}function g(n){return n}y={undefined:1};z=o.undefined;w=[void 0];undefined=1;for(undefined in o);undefined++;"
 			],
+			// What nothing reads goes where its value makes nothing happen.
+			[
+				"function f(a){ var x = 1, y = g(), z = { a: 1, b: [2, -3, !0, void 0, typeof 1, `t`] }, k = { [q]: 1 }, s = { ...o }, t = `${a}`, p = [g()]; var w = [1, () => 2, function () {}]; function h() {} function used() {} used(); for (var i = 0;;) break; var v = 1, u = 2; return a } var top = 1; function topFunction() {}",
+				{},
+				"function f(n){var a=g(),r={[q]:1},u={...o},i=`${n}`,v=[g()];function p(){}p();for(var d=0;;)break;return n}var top=1;function topFunction(){}"
+			],
+			[
+				"function f(a){ var a = 1; return arguments[0] } function g(){ var b = 1; var b = 2 } function e(){ var x = 1; eval('x') } function w(){ /* keep */ var c = 1 } function l(){ { function inner() {} } var m = -b, n = typeof b }",
+				{ format: { comments: /keep/ } },
+				'function f(n){var n=1;return arguments[0]}function g(){}function e(){var x=1;eval("x")}function w(){/* keep */var n=1}function l(){{}var a=-b,r=typeof b}'
+			],
+			[
+				"var top = 1; let t2 = 2; export function e() {} function unusedTop() {} var ex = 1; export { ex }",
+				{ module: true },
+				"export function e(){}var ex=1;export{ex};"
+			],
 			// A `using` declaration disposes of each of its names alone.
 			[
 				"{ using a = b(); using c = d(); f(a, c) }",
