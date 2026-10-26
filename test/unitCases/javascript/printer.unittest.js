@@ -13441,14 +13441,14 @@ describe("JavaScript minifier printing a SyntaxTree", () => {
 			[
 				'typeof a === "string" && typeof b !== typeof c && a === "s" && "s" === typeof a && "a" !== "b" && typeof a === /*! c */ "s"; o["key"]; o?.["if"]; o["a-b"]; 1["k"]; o[/*! c */ "k"]; o[1]; function f(){ return void 0 } function g(){ return undefined } function h(){ return void x() } function k(){ return /*! c */ void 0 }',
 				{},
-				'"string"==typeof a&&typeof b!=typeof c&&a==="s"&&"s"==typeof a&&"a"!="b"&&typeof a==/*! c */"s";o.key;o?.if;o["a-b"];1..k;o[/*! c */"k"];o[1];function f(){return}function g(){return}function h(){return void x()}function k(){/*! c */return void 0}'
+				'"string"==typeof a&&typeof b!=typeof c&&a==="s"&&"s"==typeof a&&"a"!="b"&&typeof a==/*! c */"s";o.key;o?.if;o["a-b"];1..k;o[/*! c */"k"];o[1];function f(){}function g(){}function h(){return void x()}function k(){/*! c */return void 0}'
 			],
 			// A `const` nothing writes is a `let`, private to the module or where
 			// `toplevel` says so, and a loop forever is `for(;;)`.
 			[
 				'const a = g(), b = 1; const { x, y: [z = 1, ...r] } = a; const c = 1; c = 2; const d = 1; d++; const e = 1; [e] = []; const k = 1; ({ k } = {}); const m = 1; for (m of a); export const ex = 1; for (const i of a) g(i, x, z, r, b, c, d, e, k, m); while (true) g(); while (/*! t */ true) g(); while (a) g()',
 				{ module: true },
-				'let o=g(),{x:c,y:[e=1,...n]}=o;const s=1;s=2;const r=1;r++;const a=1;[a]=[];const i=1;({k:i}={});const f=1;for(f of o);export const ex=1;for(let x of o)g(x,c,e,n,1,s,r,a,i,f);for(;;)g();while(/*! t */!0)g();while(o)g();'
+				'let o=g(),{x:t,y:[e=1,...n]}=o;const s=1;s=2;const r=1;r++;const a=1;[a]=[];const i=1;({k:i}={});const f=1;for(f of o);export const ex=1;for(let x of o)g(x,t,e,n,1,s,r,a,i,f);for(;;)g();while(/*! t */!0)g();while(o)g();'
 			],
 			[
 				"const a = 1; function f() { const b = g(); return b } f(a)",
@@ -13459,7 +13459,7 @@ describe("JavaScript minifier printing a SyntaxTree", () => {
 			[
 				"function f(){ const b = 2; var u = 1; return void 0 } f(undefined)",
 				{ mangle: false },
-				"function f(){const b=2;var u=1;return}f(undefined);"
+				"function f(){const b=2;var u=1}f(undefined);"
 			],
 			// What only dropped code reads goes too; a constant prints as its value
 			// where that is shorter and the read prints as a name would; a comment
@@ -13476,11 +13476,19 @@ describe("JavaScript minifier printing a SyntaxTree", () => {
 				{},
 				'function f(){var e="a",n="b",r="d",f="e",t=/r/,A=-1,B=1n;e;n;delete r;g(f);return[t,A,B,e,n,r,f]}f();'
 			],
+			// Constants fold; a name nothing reads goes from a function or class
+			// expression; `null` and `undefined` test as one; a `let` needs no
+			// `undefined`; and a function's last `return` of nothing goes.
+			[
+				'function f(a, b){ var MAX = 4294967295, IDX = MAX - 1, S = "a" + "b", T = S + "c", B = !0, U = typeof x + "y"; let x = void 0; var w = undefined; w = 1; var v = function n(){}, c = class C {}, d = function e(){ return e }; g(a === null || a === void 0, b !== void 0 && b !== null, a == undefined, IDX, T, T.length, B, B.x, x, w, v, c, d, U, typeof a === "s"); return }',
+				{},
+				'function f(n,e){var i=typeof o+"y";let o;var v=void 0;v=1;var c=function(){},l=class{},r=function n(){return n};g(n==null,e!=null,n==null,4294967294,"abc","abc".length,!0,true.x,o,v,c,l,r,i,"s"==typeof n)}'
+			],
 			// Each pass prints the last one's output again.
 			[
 				"function f(){ var a = undefined; return 1 } f()",
 				{ compress: { passes: 1 } },
-				"function f(){var n=void 0;return 1}f();"
+				"function f(){var n;return 1}f();"
 			],
 			[
 				"function f(){ var a = undefined; return 1 } f()",
@@ -13491,7 +13499,7 @@ describe("JavaScript minifier printing a SyntaxTree", () => {
 			[
 				"function f(){ var a = undefined; return 1 } f()",
 				{ compress: { passes: 2 }, format: { preamble: "/* p */" } },
-				"/* p */\nfunction f(){var n=void 0;return 1}f();"
+				"/* p */\nfunction f(){var n;return 1}f();"
 			],
 			// A `with` may bind `undefined`, so every one stays a name.
 			[
@@ -13508,7 +13516,7 @@ describe("JavaScript minifier printing a SyntaxTree", () => {
 			[
 				"function f(a){ var a = 1; return arguments[0] } function g(){ var b = 1; var b = 2 } function e(){ var x = 1; eval('x') } function w(){ /* keep */ var c = 1 } function l(){ { function inner() {} } var m = -b, n = typeof b }",
 				{ format: { comments: /keep/ } },
-				'function f(n){var n=1;return arguments[0]}function g(){}function e(){var x=1;eval("x")}function w(){/* keep */var n=1}function l(){{}var a=-b,r=typeof b}'
+				'function f(n){var n=1;return arguments[0]}function g(){}function e(){var x=1;eval("x")}function w(){/* keep */var n=1}function l(){{}var a=-b}'
 			],
 			[
 				"var top = 1; let t2 = 2; export function e() {} function unusedTop() {} var ex = 1; export { ex }",
