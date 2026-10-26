@@ -13482,7 +13482,20 @@ describe("JavaScript minifier printing a SyntaxTree", () => {
 			[
 				'function f(a, b){ var MAX = 4294967295, IDX = MAX - 1, S = "a" + "b", T = S + "c", B = !0, U = typeof x + "y"; let x = void 0; var w = undefined; w = 1; var v = function n(){}, c = class C {}, d = function e(){ return e }; g(a === null || a === void 0, b !== void 0 && b !== null, a == undefined, IDX, T, T.length, B, B.x, x, w, v, c, d, U, typeof a === "s"); return }',
 				{},
-				'function f(n,e){var i=typeof o+"y";let o;var v=void 0;v=1;var c=function(){},l=class{},r=function n(){return n};g(n==null,e!=null,n==null,4294967294,"abc","abc".length,!0,true.x,o,v,c,l,r,i,"s"==typeof n)}'
+				'function f(n,e){var i=typeof o+"y";let o;var v=void 0;v=1;var l=class{};g(n==null,e!=null,n==null,4294967294,"abc","abc".length,!0,true.x,o,v,function(){},l,function n(){return n},i,"s"==typeof n)}'
+			],
+			// A name set to another nothing writes reads that one; a function
+			// read once prints where it is read, where that runs after it once.
+			[
+				"function f(m, c, e){ const s = e; let t = s; g(s.kind, t, {s}); var o = (n) => n + t; m.exports = o; if (c) { var p = () => 1 } g(p); switch (c) { case 1: var q = () => 2; case 2: g(q) } const r = () => 3; for (;;) g(r); const u = function(){}; { g(u) } }",
+				{},
+				"function f(c,s,t){g(t.kind,t,{s:t});c.exports=c=>c+t;if(s)var e=()=>1;g(e);switch(s){case 1:var a=()=>2;case 2:g(a)}let f=()=>3;for(;;)g(f);{g(function(){})}}"
+			],
+			// A function reading `arguments` may write a parameter through it.
+			[
+				"function h(e){ const s = e; arguments[0] = 2; return s } h(1)",
+				{},
+				"function h(n){let e=n;arguments[0]=2;return e}h(1);"
 			],
 			// Each pass prints the last one's output again.
 			[
