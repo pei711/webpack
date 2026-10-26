@@ -13434,7 +13434,7 @@ describe("JavaScript minifier printing a SyntaxTree", () => {
 			[
 				"function f(a){ var x = 1, y = g(), z = { a: 1, b: [2, -3, !0, void 0, typeof 1, `t`] }, k = { [q]: 1 }, s = { ...o }, t = `${a}`, p = [g()]; var w = [1, () => 2, function () {}]; function h() {} function used() {} used(); for (var i = 0;;) break; var v = 1, u = 2; return a } var top = 1; function topFunction() {}",
 				{},
-				"function f(n){var a=g(),r={[q]:1},u={...o},i=`${n}`,v=[g()];function p(){}p();for(var d=0;;)break;return n}var top=1;function topFunction(){}"
+				"function f(n){var a=g(),r={[q]:1},f={...o},i=`${n}`,v=[g()];function p(){}p();for(var d=0;;)break;return n}var top=1;function topFunction(){}"
 			],
 			[
 				"function f(a){ var a = 1; return arguments[0] } function g(){ var b = 1; var b = 2 } function e(){ var x = 1; eval('x') } function w(){ /* keep */ var c = 1 } function l(){ { function inner() {} } var m = -b, n = typeof b }",
