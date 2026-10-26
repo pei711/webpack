@@ -13430,6 +13430,13 @@ describe("JavaScript minifier printing a SyntaxTree", () => {
 				{},
 				"function f(n){return n===void 0?undefined.x:typeof void 0}function g(n){return n}y={undefined:1};z=o.undefined;w=[void 0];undefined=1;for(undefined in o);undefined++;"
 			],
+			// Strings compare loosely, a name in brackets prints after a `.`, and
+			// a `return` of `undefined` from nothing happening is bare.
+			[
+				'typeof a === "string" && typeof b !== typeof c && a === "s" && "s" === typeof a && "a" !== "b" && typeof a === /*! c */ "s"; o["key"]; o?.["if"]; o["a-b"]; 1["k"]; o[/*! c */ "k"]; o[1]; function f(){ return void 0 } function g(){ return undefined } function h(){ return void x() } function k(){ return /*! c */ void 0 }',
+				{},
+				'"string"==typeof a&&typeof b!=typeof c&&a==="s"&&"s"==typeof a&&"a"!="b"&&typeof a==/*! c */"s";o.key;o?.if;o["a-b"];1..k;o[/*! c */"k"];o[1];function f(){return}function g(){return}function h(){return void x()}function k(){/*! c */return void 0}'
+			],
 			// A `with` may bind `undefined`, so every one stays a name.
 			[
 				"f(undefined); with (o) f(undefined)",
