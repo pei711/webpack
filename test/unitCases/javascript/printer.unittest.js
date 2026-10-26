@@ -13407,7 +13407,7 @@ describe("JavaScript minifier printing a SyntaxTree", () => {
 			[
 				"if (a) { let x = 1; f(x) } if (a) { const y = 1; f(y) } if (a) { var z = 1 } if (a) { class C {} } if (a) { function g() {} } if (a) {} if (a) { b(); c() }",
 				{},
-				"if(a){let i=1;f(i)}if(a){const n=1;f(n)}if(a)var z=1;if(a){class s{}}if(a){function g(){}}if(a){}if(a){b();c()}"
+				"if(a){let i=1;f(i)}if(a){let n=1;f(n)}if(a)var z=1;if(a){class s{}}if(a){function g(){}}if(a){}if(a){b();c()}"
 			],
 			[
 				"if (a) /* before */ { b() } if (a) { b() /* after */ }",
@@ -13436,6 +13436,24 @@ describe("JavaScript minifier printing a SyntaxTree", () => {
 				'typeof a === "string" && typeof b !== typeof c && a === "s" && "s" === typeof a && "a" !== "b" && typeof a === /*! c */ "s"; o["key"]; o?.["if"]; o["a-b"]; 1["k"]; o[/*! c */ "k"]; o[1]; function f(){ return void 0 } function g(){ return undefined } function h(){ return void x() } function k(){ return /*! c */ void 0 }',
 				{},
 				'"string"==typeof a&&typeof b!=typeof c&&a==="s"&&"s"==typeof a&&"a"!="b"&&typeof a==/*! c */"s";o.key;o?.if;o["a-b"];1..k;o[/*! c */"k"];o[1];function f(){return}function g(){return}function h(){return void x()}function k(){/*! c */return void 0}'
+			],
+			// A `const` nothing writes is a `let`, private to the module or where
+			// `toplevel` says so, and a loop forever is `for(;;)`.
+			[
+				'const a = g(), b = 1; const { x, y: [z = 1, ...r] } = a; const c = 1; c = 2; const d = 1; d++; const e = 1; [e] = []; const k = 1; ({ k } = {}); const m = 1; for (m of a); export const ex = 1; for (const i of a) g(i, x, z, r, b, c, d, e, k, m); while (true) g(); while (/*! t */ true) g(); while (a) g()',
+				{ module: true },
+				'let o=g(),t=1,{x:c,y:[e=1,...n]}=o;const s=1;s=2;const r=1;r++;const a=1;[a]=[];const i=1;({k:i}={});const f=1;for(f of o);export const ex=1;for(let x of o)g(x,c,e,n,t,s,r,a,i,f);for(;;)g();while(/*! t */!0)g();while(o)g();'
+			],
+			[
+				"const a = 1; function f() { const b = 2; return b } f(a)",
+				{},
+				"const a=1;function f(){let n=2;return n}f(a);"
+			],
+			// Unmangled, no name is known: every one stays.
+			[
+				"function f(){ const b = 2; var u = 1; return void 0 } f(undefined)",
+				{ mangle: false },
+				"function f(){const b=2;var u=1;return}f(undefined);"
 			],
 			// A `with` may bind `undefined`, so every one stays a name.
 			[
