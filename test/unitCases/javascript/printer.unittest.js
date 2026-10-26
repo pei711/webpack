@@ -13430,6 +13430,12 @@ describe("JavaScript minifier printing a SyntaxTree", () => {
 				{},
 				"function f(n){return n===void 0?undefined.x:typeof void 0}function g(n){return n}y={undefined:1};z=o.undefined;w=[void 0];undefined=1;for(undefined in o);undefined++;"
 			],
+			// A `with` may bind `undefined`, so every one stays a name.
+			[
+				"f(undefined); with (o) f(undefined)",
+				{},
+				"f(undefined);with(o)f(undefined);"
+			],
 			// What nothing reads goes where its value makes nothing happen.
 			[
 				"function f(a){ var x = 1, y = g(), z = { a: 1, b: [2, -3, !0, void 0, typeof 1, `t`] }, k = { [q]: 1 }, s = { ...o }, t = `${a}`, p = [g()]; var w = [1, () => 2, function () {}]; function h() {} function used() {} used(); for (var i = 0;;) break; var v = 1, u = 2; return a } var top = 1; function topFunction() {}",
