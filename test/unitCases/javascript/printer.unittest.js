@@ -13424,6 +13424,12 @@ describe("JavaScript minifier printing a SyntaxTree", () => {
 				{},
 				"f(!0,!1);x=true.toString();y=true**2;z=2**!0;w={a:!1};t=typeof!0;new true;true`x`;v=a(!0)(!1);"
 			],
+			// `undefined` is `void 0` where it reads the global, not where it is bound or written.
+			[
+				"function f(a){ return a === undefined ? undefined.x : typeof undefined } function g(undefined) { return undefined } y = { undefined: 1 }; z = o.undefined; w = [undefined]; undefined = 1; for (undefined in o); undefined++",
+				{},
+				"function f(n){return n===void 0?undefined.x:typeof void 0}function g(n){return n}y={undefined:1};z=o.undefined;w=[void 0];undefined=1;for(undefined in o);undefined++;"
+			],
 			// A `using` declaration disposes of each of its names alone.
 			[
 				"{ using a = b(); using c = d(); f(a, c) }",
