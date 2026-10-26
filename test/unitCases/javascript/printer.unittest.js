@@ -13491,6 +13491,13 @@ describe("JavaScript minifier printing a SyntaxTree", () => {
 				{},
 				"function f(c,s,t){g(t.kind,t,{s:t});c.exports=c=>c+t;if(s)var e=()=>1;g(e);switch(s){case 1:var a=()=>2;case 2:g(a)}let f=()=>3;for(;;)g(f);{g(function(){})}}"
 			],
+			// A `var` is a constant where nothing called before it can read it,
+			// nor a read in its own function before it.
+			[
+				"function f(){ function m(){ return [A, B.x, C] } g(); var A = 1, B = 2, C = 3; y = C; return m } function h(){ var r = D; var D = 4; function k(){ return D } return [r, k] } function j(){ x = 1; var E = 5, F = 6; function q(){ return [E, (F).x, F] } return q }",
+				{},
+				"function f(){function n(){return[r,t.x,u]}g();var r=1,t=2,u=3;y=u;return n}function h(){var n=r,r=4;function t(){return r}return[n,t]}function j(){x=1;var r=6;function t(){return[5,r.x,r]}return t}"
+			],
 			// A function reading `arguments` may write a parameter through it.
 			[
 				"function h(e){ const s = e; arguments[0] = 2; return s } h(1)",
